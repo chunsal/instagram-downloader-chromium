@@ -18,12 +18,7 @@ Download Instagram photos, videos, stories, reels, and highlights directly in yo
 
 ## Installation
 
-### Chrome Web Store (recommended)
-
-1. Go to the [Chrome Web Store page]()
-2. Click **Add to Chrome**
-
-### Manual installation (developer mode)
+### Manual installation (developer mode) / only way for to install for now
 
 1. Download the latest `dist/chrome.zip` from [Releases](https://github.com/chunsal/instagram-downloader-chromium/releases)
 2. Extract the ZIP file
