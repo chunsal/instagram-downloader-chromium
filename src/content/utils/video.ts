@@ -1,0 +1,128 @@
+import { storageCache } from "./storage";
+import { audioIsMutedSVGPath, audioIsPlayingSVGPath, unmutedSVGPath } from "../../constants";
+
+const volumeChangeGuard = new WeakMap<HTMLVideoElement, boolean>();
+
+export async function handleVideo() {
+    const { setting_enable_video_controls, setting_enable_explore_video_clickthrough } = storageCache.settings;
+    if (!setting_enable_video_controls) return;
+
+    const videos = document.querySelectorAll('video');
+    for (let i = 0; i < videos.length; i++) {
+        const videoPlayerMaskDiv = videos[i].closest('[data-visualcompletion="ignore-late-mutation"]')?.querySelector('div[role="group"]');
+        if (videoPlayerMaskDiv instanceof HTMLDivElement) {
+            handleVideoMaskClip(videoPlayerMaskDiv, videos[i])
+        }
+
+        const allowExploreClickthrough = setting_enable_explore_video_clickthrough ?? true;
+        if (allowExploreClickthrough) attachExploreNavigation(videos[i]);
+    }
+}
+
+function attachExploreNavigation(video: HTMLVideoElement) {
+    if (!window.location.pathname.startsWith('/explore')) return;
+
+    const link = video.closest<HTMLAnchorElement>('a[href]');
+    if (!link) return;
+    if (video.dataset.enableExploreNav === 'true') return;
+
+    video.dataset.enableExploreNav = 'true';
+    video.addEventListener(
+        'click',
+        (event) => {
+            if (!(event instanceof MouseEvent)) return;
+            const controlZoneHeight = 72; // approximate height covered by native controls
+            const offsetFromBottom = video.clientHeight - event.offsetY;
+
+            // Keep control interactions working by skipping clicks near the control bar
+            if (Number.isFinite(offsetFromBottom) && offsetFromBottom <= controlZoneHeight) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+            const href = link.href || new URL(link.getAttribute('href') || '', window.location.origin).href;
+            window.open(href, link.target || '_self');
+        },
+        true
+    );
+}
+
+export function handleStoriesVideoVolumeChange(e: Event) {
+    const target = e.target;
+    if (!(target instanceof HTMLVideoElement)) return
+    if (volumeChangeGuard.get(target)) return;
+    volumeChangeGuard.set(target, true);
+    try {
+        const sectionNode = target.closest("section")
+        if (!sectionNode) return;
+        const isMutingBtn = sectionNode.querySelector(audioIsMutedSVGPath);
+        const isUnmutingBtn = sectionNode.querySelector(audioIsPlayingSVGPath)
+        const newEvent = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true
+        });
+        if (!target.muted && isMutingBtn) {
+            isMutingBtn.dispatchEvent(newEvent)
+        }
+        if (target.muted && isUnmutingBtn) {
+            isUnmutingBtn.dispatchEvent(newEvent)
+        }
+    } finally {
+        setTimeout(() => {
+            volumeChangeGuard.set(target, false);
+        }, 100);
+    }
+}
+
+export function handleVideVolumeChange(e: Event, groupDiv: HTMLDivElement) {
+    const videoTarget = e.target;
+    if (!(videoTarget instanceof HTMLVideoElement)) return
+    if (volumeChangeGuard.get(videoTarget)) return;
+    volumeChangeGuard.set(videoTarget, true);
+    try {
+        const isMutingBtn = groupDiv.querySelector(audioIsMutedSVGPath);
+        const isUnmutingBtn = groupDiv.querySelector(audioIsPlayingSVGPath) || groupDiv.querySelector(unmutedSVGPath);
+        const newEvent = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true
+        });
+        if (!videoTarget.muted && isMutingBtn) {
+            isMutingBtn.dispatchEvent(newEvent)
+        }
+        if (videoTarget.muted && isUnmutingBtn) {
+            isUnmutingBtn.dispatchEvent(newEvent)
+        }
+    } finally {
+        setTimeout(() => {
+            volumeChangeGuard.set(videoTarget, false);
+        }, 100);
+    }
+}
+
+export function handleVideoMaskClip(videoPlayerMaskDiv: HTMLDivElement, videoTarget: HTMLVideoElement, customOptions: {
+    bottomDiv?: Node | null;
+    onVolumeChange?: (e: Event) => void,
+} = {}) {
+    videoTarget.controls = true;
+    if (videoTarget.dataset.customVolumeAttached !== 'true') {
+        const handler = customOptions.onVolumeChange
+            ? customOptions.onVolumeChange
+            : (event: Event) => {
+                handleVideVolumeChange(event, videoPlayerMaskDiv);
+            };
+        videoTarget.addEventListener('volumechange', handler);
+        videoTarget.dataset.customVolumeAttached = 'true';
+    }
+    videoPlayerMaskDiv.style.clipPath = `inset(0 0 4rem 0)`;
+
+    if (customOptions.bottomDiv instanceof HTMLDivElement) {
+        customOptions.bottomDiv.style.bottom = '4rem';
+    } else {
+        for (const child of videoPlayerMaskDiv.children) {
+            if (child instanceof HTMLDivElement && child.querySelector('svg')) {
+                child.style.bottom = "4rem"
+            }
+        }
+    }
+}

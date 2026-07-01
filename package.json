@@ -1,0 +1,48 @@
+{
+  "name": "instagram-download-browser-extension",
+  "version": "2.4.8",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "npx tsc --noEmit && node esbuild.config.mjs chrome",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "npx eslint --fix"
+  },
+  "keywords": [
+    "Instagram",
+    "download",
+    "browser",
+    "extension"
+  ],
+  "author": {
+    "name": "chunsal",
+    "email": "help.chun@erine.email"
+  },
+  "homepage": "https://github.com/chunsal/instagram-downloader-chromium",
+  "bugs": {
+    "url": "https://github.com/chunsal/instagram-downloader-chromium/issues",
+    "email": "help.chun@erine.email"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "dependencies": {
+    "@zip.js/zip.js": "^2.8.26",
+    "dayjs": "^1.11.20",
+    "preact": "^10.29.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "chrome-types": "^0.1.429",
+    "esbuild": "^0.28.0",
+    "esbuild-sass-plugin": "^3.7.0",
+    "eslint": "^10.4.0",
+    "globals": "^17.6.0",
+    "sass": "^1.100.0",
+    "sass-embedded": "^1.100.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
